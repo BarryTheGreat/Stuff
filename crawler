@@ -1,0 +1,17 @@
+import requests
+from bs4 import BeautifulSoup
+
+def web_crawler(url, word):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    text = soup.get_text().lower()
+    print("Occurrences:", text.count(word.lower()))
+
+    for link in soup.find_all("a"):
+        print(link.get("href"))
+
+url = input("Enter URL: ")
+word = input("Enter word: ")
+
+web_crawler(url, word)
