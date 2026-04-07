@@ -1,0 +1,16 @@
+from collections import defaultdict
+
+def build_index(docs):
+    index = defaultdict(set)
+    for doc_id, text in docs.items():
+        for word in text.lower().split():
+            index[word].add(doc_id)
+    return index
+
+docs = {
+    1: "information retrieval",
+    2: "search engines retrieval"
+}
+
+index = build_index(docs)
+print(index)
