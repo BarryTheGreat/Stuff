@@ -1,0 +1,13 @@
+import requests
+import xml.etree.ElementTree as ET
+
+def load_rss(url):
+    return requests.get(url).content
+
+def parse_xml(data):
+    root = ET.fromstring(data)
+    for item in root.findall(".//item"):
+        print(item.find("title").text)
+
+rss = load_rss("https://feeds.feedburner.com/50WordStories")
+parse_xml(rss)
