@@ -1,0 +1,122 @@
+import math
+import pandas as pd
+import numpy as np
+import random
+import tensorflow as tf
+from keras import models, layers, optimizers, regularizers
+from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils import class_weight
+import matplotlib.pyplot as plt
+
+
+file_name = r"C:\Users\Admin\Downloads\SAheart.csv"
+data = pd.read_csv(file_name, sep=',')
+# Clean column names
+data.columns = data.columns.str.strip().str.lower()
+# Convert famhist to 0/1
+data['famhist'] = data['famhist'].str.strip().str.lower().map({'present': 1,
+'absent': 0})
+# Convert chd: Si → 1, No → 0
+data['chd'] = data['chd'].str.strip().map({'Si': 1, 'No': 0})
+
+# Ensure numeric dtype
+data = data.astype({'famhist': 'float32', 'chd': 'float32'})
+
+
+n_test = int(math.ceil(len(data) * 0.3))
+random.seed(42)
+test_ixs = random.sample(list(range(len(data))), n_test) train_ixs = [ix for ix
+in range(len(data)) if ix not in test_ixs]
+train = data.iloc[train_ixs, :]
+test = data.iloc[test_ixs, :]
+print("Train size:", len(train))
+print("Test size:", len(test))
+
+
+features = ['adiposity', 'age', 'alcohol', 'obesity', 'typea', 'ldl', 'tobacco',
+'sbp', 'famhist']
+response = 'chd'
+x_train = train[features].astype('float32')
+y_train = train[response].astype('float32')
+x_test = test[features].astype('float32')
+y_test = test[response].astype('float32')
+# Standardize features
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+
+x_test = scaler.transform(x_test)
+
+
+class_weights = class_weight.compute_class_weight( 'balanced',
+classes=np.unique(y_train), y=y_train )
+class_weights = dict(enumerate(class_weights))
+
+
+hidden_units_1 = 128
+hidden_units_2 = 64
+activation = 'relu'
+l2 = 0.0005
+learning_rate = 0.001
+epochs = 300
+batch_size = 16
+dropout_1 = 0.3
+dropout_2 = 0.2
+
+
+model = models.Sequential()
+model.add(layers.Input(shape=(len(features),)))
+model.add(layers.Dense(hidden_units_1, activation=activation,
+kernel_regularizer=regularizers.l2(l2)))
+
+model.add(layers.Dropout(dropout_1))
+model.add(layers.Dense(hidden_units_2, activation=activation,
+kernel_regularizer=regularizers.l2(l2)))
+model.add(layers.Dropout(dropout_2))
+model.add(layers.Dense(1, activation='sigmoid'))
+model.compile(
+loss='binary_crossentropy',
+optimizer=optimizers.Adam(learning_rate=learning_rate),
+metrics=['accuracy']
+)
+
+
+early_stop = tf.keras.callbacks.EarlyStopping(
+monitor='val_loss',
+patience=30,
+restore_best_weights=True
+)
+lr_schedule = tf.keras.callbacks.ReduceLROnPlateau(
+monitor='val_loss',
+factor=0.5,
+patience=20,
+min_lr=1e-6
+)
+
+
+history = model.fit(
+x_train, y_train,
+validation_split=0.2,
+epochs=epochs,
+batch_size=batch_size,
+class_weight=class_weights,
+callbacks=[early_stop, lr_schedule],
+verbose=1
+)
+
+
+train_acc = model.evaluate(x_train, y_train, batch_size=32, verbose=0)[1]
+test_acc = model.evaluate(x_test, y_test, batch_size=32, verbose=0)[1]
+print("Training accuracy:", train_acc)
+print("Testing accuracy:", test_acc)
+# -------------------------------
+# Plot Loss Curve
+# -------------------------------
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Loss Curve")
+
+plt.legend()
+plt.show()

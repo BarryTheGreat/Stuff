@@ -1,0 +1,34 @@
+# Load required libraries
+library(lubridate)
+library(forecast)
+
+# Read the dataset
+electricity_data <- read.csv("C:/Users/Admin/Desktop/Electric_Production.csv")
+
+# Convert DATE column to Date format
+electricity_data$DATE <- as.Date(electricity_data$DATE, format = "%m-%d-%Y")
+
+# Create time series object
+ts_electricity <- ts(electricity_data$Value, frequency = 365.25 / 7)
+
+# Define ARIMA order
+p <- 1
+d <- 1
+q <- 1
+
+# Fit ARIMA model
+arima_model <- Arima(ts_electricity, order = c(p, d, q))
+
+# Forecast next 20 values
+electricity_forecast <- forecast(arima_model, h = 20)
+
+# Display forecast values
+print(electricity_forecast)
+
+# Plot the forecast
+plot(
+  electricity_forecast,
+  main = "Electricity Production Forecast",
+  xlab = "Date",
+  ylab = "Production Value"
+)

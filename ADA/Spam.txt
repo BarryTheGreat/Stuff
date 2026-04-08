@@ -1,0 +1,55 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+import nltk
+import warnings
+import seaborn as sns
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn import metrics
+
+warnings.filterwarnings('ignore')
+
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+data = pd.read_csv("spam.csv", encoding="latin-1")
+
+data = data[['v1', 'v2']]
+data.columns = ['label', 'text']
+
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words("english"))
+
+corpus = []
+
+for message in data['text']:
+    msg = re.sub('[^a-zA-Z]', ' ', message)
+    msg = msg.lower().split()
+    msg = [lemmatizer.lemmatize(word) for word in msg if word not in stop_words]
+    msg = ' '.join(msg)
+    corpus.append(msg)
+
+data['text'] = corpus
+
+X = data['text']
+y = data['label']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.33, random_state=42
+)
+
+cv = CountVectorizer()
+X_train_cv = cv.fit_transform(X_train)
+X_test_cv = cv.transform(X_test)
+
+model = LogisticRegression()
+model.fit(X_train_cv, y_train)
+
+y_pred = model.predict(X_test_cv)
+
+accuracy = metrics.accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)

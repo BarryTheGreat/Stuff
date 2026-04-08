@@ -1,0 +1,31 @@
+library(tm)
+library(topicmodels)
+
+setwd("C:/Users/student/Downloads/british-fiction-corpus")
+
+filenames <- list.files(path = ".", pattern = "*.txt")
+
+filetext <- lapply(filenames, readLines)
+
+mycorpus <- Corpus(VectorSource(filetext))
+
+mycorpus <- tm_map(mycorpus, content_transformer(tolower))
+mycorpus <- tm_map(mycorpus, removeNumbers)
+mycorpus <- tm_map(mycorpus, removePunctuation)
+
+mystopwords <- c("of", "a", "and", "the", "in", "to", "for", "that", "is", "on",
+                 "are", "with", "as", "by", "be", "an", "which", "it", "from",
+                 "or", "can", "have", "these", "has", "such")
+
+mycorpus <- tm_map(mycorpus, removeWords, mystopwords)
+
+dtm <- DocumentTermMatrix(mycorpus)
+
+k <- 3
+
+lda_output <- LDA(dtm, k, method = "VEM")
+
+summary(lda_output)
+topics(lda_output)
+terms(lda_output, 10)
+posterior(lda_output)$topics

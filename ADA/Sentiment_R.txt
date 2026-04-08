@@ -1,0 +1,38 @@
+weatherdata <- read.csv("C:\\Users\\student\\Downloads\\weather (1).csv")
+
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+library(syuzhet)
+library(lubridate)
+library(ggplot2)
+library(scales)
+library(reshape2)
+library(dplyr)
+
+corpus <- iconv(weatherdata$tweet_text, to = "utf-8")
+corpus <- Corpus(VectorSource(corpus))
+
+corpus <- tm_map(corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removeWords, stopwords('english'))
+corpus <- tm_map(corpus, stripWhitespace)
+
+tdm <- TermDocumentMatrix(corpus)
+tdm_matrix <- as.matrix(tdm)
+
+w <- rowSums(tdm_matrix)
+w <- sort(w, decreasing = TRUE)
+
+set.seed(222)
+wordcloud(words = names(w), freq = w, max.words = 150,
+          random.order = FALSE, min.freq = 5,
+          colors = brewer.pal(8, 'Dark2'))
+
+tweets <- iconv(weatherdata$tweet_text, to = "utf-8")
+
+s <- get_nrc_sentiment(tweets)
+
+barplot(colSums(s), las = 2, col = rainbow(10),
+        ylab = 'count', main = 'Sentiments for weather')

@@ -1,0 +1,31 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+
+file_path = "C:/Users/Admin/Desktop/Electric_Production.csv"
+electricity_data = pd.read_csv(file_path)
+
+electricity_data['DATE'] = pd.to_datetime(
+    electricity_data['DATE'],
+    format="%m-%d-%Y"
+)
+
+electricity_data.set_index('DATE', inplace=True)
+
+ts_data = electricity_data['Value']
+
+model = ARIMA(ts_data, order=(1, 1, 1))
+model_fit = model.fit()
+
+forecast_values = model_fit.forecast(steps=20)
+
+print("----- Forecasted Values -----")
+print(forecast_values)
+
+plt.figure(figsize=(10, 6))
+ts_data.plot(label="Original Data")
+forecast_values.plot(label="Forecast", linestyle="--")
+plt.title("Electricity Production Forecast")
+plt.ylabel("Production Value")
+plt.legend()
+plt.show()
